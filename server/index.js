@@ -7,15 +7,22 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+});
+
 app.use(cors({
-    origin: ["https://todo-master-8oiw.vercel.app", "http://localhost:3000"],
+    origin: "*", // Temporarily allow all for debugging
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
 app.use(express.json());
 
-// Health check
-app.get("/", (req, res) => res.send("Todo API is running..."));
+// Explicit Root Route
+app.get("/", (req, res) => {
+    res.json({ message: "Todo API is live and well!", status: "Connected" });
+});
 
 // Routes
 const todoRoutes = require('./routes/todos');

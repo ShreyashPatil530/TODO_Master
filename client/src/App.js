@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api/todos";
+console.log("Using API URL:", API_BASE);
 
 function App() {
   const [todos, setTodos] = useState([]);
