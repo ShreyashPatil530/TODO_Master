@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_URL || "https://todo-master-gamma.vercel.app/api/todos";
+const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const API_BASE = isLocalhost
+  ? "http://localhost:5000/api/todos"
+  : (process.env.REACT_APP_API_URL || "https://todo-master-gamma.vercel.app/api/todos");
+
 console.log("Using API URL:", API_BASE);
 
 function App() {
@@ -15,7 +19,9 @@ function App() {
   const getTodos = async () => {
     try {
       const res = await axios.get(API_BASE);
-      setTodos(res.data);
+      if (res.data) {
+        setTodos(res.data);
+      }
     } catch (err) {
       console.error("Error fetching todos:", err);
     }
@@ -25,8 +31,10 @@ function App() {
     if (!newTodo.trim()) return;
     try {
       const res = await axios.post(API_BASE, { title: newTodo });
-      setTodos([res.data, ...todos]);
-      setNewTodo("");
+      if (res.data) {
+        setTodos([res.data, ...todos]);
+        setNewTodo("");
+      }
     } catch (err) {
       console.error("Error adding todo:", err);
     }

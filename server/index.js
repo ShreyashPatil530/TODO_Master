@@ -13,7 +13,17 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-    origin: "*", // Temporarily allow all for debugging
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // In development, allow localhost. In production, you might want to restrict this.
+        if (origin.startsWith('http://localhost') || origin.includes('vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
@@ -29,23 +39,36 @@ const todoRoutes = require('./routes/todos');
 app.use('/api/todos', todoRoutes);
 
 // MongoDB connection with caching for serverless
-let isConnected = false;
+let cachedDb = null;
 
 const connectToDB = async () => {
-    if (isConnected) return;
+    if (cachedDb && mongoose.connection.readyState === 1) {
+        return cachedDb;
+    }
+
     try {
-        const db = await mongoose.connect(process.env.MONGO_URI);
-        isConnected = db.connections[0].readyState;
+        console.log('Connecting to MongoDB...');
+        const db = await mongoose.connect(process.env.MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        cachedDb = db;
         console.log('MongoDB connected successfully');
+        return db;
     } catch (err) {
         console.error('MongoDB connection error:', err.message);
+        throw err;
     }
 };
 
 // Middleware to ensure DB is connected
 app.use(async (req, res, next) => {
-    await connectToDB();
-    next();
+    try {
+        await connectToDB();
+        next();
+    } catch (err) {
+        res.status(500).json({ error: "Database connection failed" });
+    }
 });
 
 if (process.env.NODE_ENV !== 'production') {
