@@ -29,31 +29,20 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Explicit Root Route
-app.get("/", (req, res) => {
-    res.json({ message: "Todo API is live and well!", status: "Connected" });
-});
-
-// Routes
-const todoRoutes = require('./routes/todos');
-app.use('/api/todos', todoRoutes);
-
 // MongoDB connection with caching for serverless
 let cachedDb = null;
 
 const connectToDB = async () => {
     if (cachedDb && mongoose.connection.readyState === 1) {
+        console.log('Using cached database connection');
         return cachedDb;
     }
 
     try {
         console.log('Connecting to MongoDB...');
-        const db = await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        const db = await mongoose.connect(process.env.MONGO_URI);
         cachedDb = db;
-        console.log('MongoDB connected successfully');
+        console.log('MongoDB connected successfully to:', mongoose.connection.name);
         return db;
     } catch (err) {
         console.error('MongoDB connection error:', err.message);
@@ -61,7 +50,7 @@ const connectToDB = async () => {
     }
 };
 
-// Middleware to ensure DB is connected
+// Middleware to ensure DB is connected BEFORE routes
 app.use(async (req, res, next) => {
     try {
         await connectToDB();
@@ -70,6 +59,15 @@ app.use(async (req, res, next) => {
         res.status(500).json({ error: "Database connection failed" });
     }
 });
+
+// Explicit Root Route
+app.get("/", (req, res) => {
+    res.json({ message: "Todo API is live and well!", status: "Connected" });
+});
+
+// Routes
+const todoRoutes = require('./routes/todos');
+app.use('/api/todos', todoRoutes);
 
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
