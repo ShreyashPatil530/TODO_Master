@@ -4,7 +4,7 @@ import axios from 'axios';
 const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const API_BASE = isLocalhost
   ? "http://localhost:5000/api/todos"
-  : (process.env.REACT_APP_API_URL || "https://todo-master-gamma.vercel.app/api/todos");
+  : (process.env.REACT_APP_API_URL || "https://todo-master-gamma.vercel.app");
 
 console.log("Using API URL:", API_BASE);
 
